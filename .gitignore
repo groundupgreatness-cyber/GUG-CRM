@@ -1,0 +1,23 @@
+# Secrets — never commit the real admin password
+.streamlit/secrets.toml
+
+# The live database and any backups — real client/financial data must
+# never end up in source control. The schema bootstraps itself on first
+# run (database.init_db()), so nothing here is needed to deploy.
+*.db
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# OS cruft
+.DS_Store
+
+# Claude Code's own local tooling config — not part of the app
+.claude/
+
+# Real historical business/revenue data — never belongs in source control,
+# even a private repo. import_gug_data.py is a one-time local script; run
+# it from a local copy of this file if you ever need to re-import.
+*.csv
