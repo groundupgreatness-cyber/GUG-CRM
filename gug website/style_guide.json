@@ -1,0 +1,93 @@
+{
+  "brand_name": "Ground Up Greatness (GUG) Performance",
+  "design_philosophy": "High-Performance Minimalism. Clean, scientific, energetic, and data-driven visual hierarchy.",
+  
+  "color_palette": {
+    "primary_background": {
+      "hex": "#0D0D0D",
+      "name": "Chalkboard Black / Pitch Black",
+      "use_case": "Main background across the website to create an elite, dark, and high-contrast premium feel."
+    },
+    "secondary_background": {
+      "hex": "#1A1A1A",
+      "name": "Asphalt Gray",
+      "use_case": "Card backgrounds, section dividers, and subtle containers to separate content."
+    },
+    "primary_text": {
+      "hex": "#FFFFFF",
+      "name": "Pure White",
+      "use_case": "Main headlines, primary body text, and absolute readability against the dark theme."
+    },
+    "accent_color_1": {
+      "hex": "#39FF14",
+      "name": "Neon Electric Green / Volt",
+      "use_case": "The ultimate high-visibility color representing power, speed, Output Sports sensors, and energy. Used strictly for Call-to-Actions (CTAs), highlights, data points, and active states."
+    },
+    "accent_color_2": {
+      "hex": "#8E8E93",
+      "name": "Data Gray / Silver",
+      "use_case": "Secondary text, labels, units of measurement (e.g., m/s, GCT, SSC), and non-active border lines."
+    }
+  },
+
+  "typography": {
+    "font_family_hebrew": "Heebo, Assistant, sans-serif",
+    "font_family_english": "Montserrat, Archivo, sans-serif",
+    "hierarchy": {
+      "h1_main_hero": {
+        "size_desktop": "48px-64px",
+        "weight": "900 (Black)",
+        "letter_spacing": "-1px",
+        "text_transform": "uppercase (English)"
+      },
+      "h2_section_titles": {
+        "size_desktop": "32px-36px",
+        "weight": "800 (Extra Bold)",
+        "color": "#FFFFFF"
+      },
+      "h3_card_titles": {
+        "size_desktop": "20px-24px",
+        "weight": "700 (Bold)",
+        "color": "#39FF14"
+      },
+      "body_text": {
+        "size_desktop": "16px-18px",
+        "weight": "400 (Regular)",
+        "line_height": "1.6",
+        "color": "#FFFFFF"
+      }
+    }
+  },
+
+  "ux_ui_guidelines": {
+    "layout_style": "Clean & Minimalist. The user's focus must always sit entirely on the performance metrics, the elite athlete footage, and precise value propositions. Avoid unnecessary decorations, complex vectors, or messy patterns.",
+    
+    "white_space_strategy": "Generous use of padding and empty space (macro whitespace) between sections. This gives the premium content room to 'breathe' and heightens the elite, high-end feel of the GUG digital ecosystem.",
+    
+    "background_video_spec": {
+      "type": "Ambient Background Video Loops",
+      "execution": "Short, 3-5 second high-definition, high-contrast video clips running silently on a continuous loop in the background of the hero section. Footage must showcase real action: slow-motion acceleration, violent deceleration cuts, ankle stiffness loading, or VBT tracking.",
+      "overlay": "Must feature a dark semi-transparent overlay (Linear Gradient or 40-60% black opacity) to guarantee absolute contrast and crisp readability for text placed on top."
+    },
+    
+    "animations_and_transitions": {
+      "scroll_behavior": "Smooth scrolling enabled globally.",
+      "scroll_reveals": "Subtle, smooth fade-in and slide-up animations (e.g., Duration: 0.6s, Easing: ease-out) as the user scrolls down to discover performance tiers or data breakdowns.",
+      "hover_states": "Interactive elements (Buttons, Program Cards) must instantly respond with a crisp transition. CTAs expand slightly or glow into the Neon Volt Green (#39FF14)."
+    },
+
+    "buttons_and_ctas": {
+      "shape": "Sharp rectangular borders or micro-rounded corners (max 4px radius) to maintain a rigid, aggressive, and athletic architectural vibe.",
+      "primary_cta": {
+        "background_color": "#39FF14",
+        "text_color": "#0D0D0D",
+        "weight": "800 (Extra Bold)"
+      },
+      "secondary_cta": {
+        "background_color": "transparent",
+        "border": "2px solid #FFFFFF",
+        "text_color": "#FFFFFF"
+      }
+    }
+  }
+}
