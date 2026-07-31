@@ -94,16 +94,18 @@ LEGACY_ONLINE_CATEGORIES = {"Online Coaching"}
 # Payment statuses for packages/subscriptions: canonical key -> display label
 # ---------------------------------------------------------------------------
 PAYMENT_STATUSES = {
-    "Paid": "🟢 שולם (Paid)",
-    "Partial": "🟡 שולם חלקית (Partial)",
-    "Pending": "🔴 חוב פתוח (Pending)",
+    "Paid": "שולם (Paid)",
+    "Partial": "שולם חלקית (Partial)",
+    "Pending": "חוב פתוח (Pending)",
 }
 
 # Display-only badge labels for client status (the stored value stays plain
 # 'Active'/'Inactive' — comparisons and filters use the unprefixed key).
+# Color is applied where these are shown via a pandas Styler (app.py's
+# _style_status_column), not baked into the label text.
 CLIENT_STATUS_BADGES = {
-    "Active": "🟢 Active",
-    "Inactive": "🟡 Inactive",
+    "Active": "Active",
+    "Inactive": "Inactive",
 }
 
 EXPENSE_CATEGORIES = [
@@ -189,7 +191,7 @@ WHATSAPP_TEMPLATES = {
 }
 
 # How many days of no logged session before an active client is flagged as
-# inactive (Dashboard → 🔔 Requires Attention → Inactivity).
+# inactive (Dashboard → Requires Attention → Inactivity).
 INACTIVITY_THRESHOLD_DAYS = 14
 
 # ---------------------------------------------------------------------------

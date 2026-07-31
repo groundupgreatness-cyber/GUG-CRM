@@ -25,7 +25,7 @@ import pandas as pd
 import config
 import database as db
 
-OVERDRAFT_TAG = "⚠️ חריגה (Overdraft)"
+OVERDRAFT_TAG = "חריגה (Overdraft)"
 
 
 class ValidationError(Exception):
@@ -115,7 +115,7 @@ def assign_package(client_id: int, kind: str, item: dict, start: date,
                            package_id=package_id)
         msg += f" Income of ₪{collected:,.0f} recorded."
     if collected < full_price:
-        msg += f" ⚠️ Open balance: ₪{full_price - collected:,.0f}."
+        msg += f" Open balance: ₪{full_price - collected:,.0f}."
     return msg
 
 

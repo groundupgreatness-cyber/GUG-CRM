@@ -1,8 +1,12 @@
 # GUG CRM — Streamlit app config (safe to commit, no secrets here).
 #
-# primaryColor matches the app's own brand blue (app.py's COLOR_BLUE, light
-# mode). Base/background intentionally left unset so light/dark keeps
-# following the visitor's system preference, same as the rest of the app's
-# theme-adaptive design (app._theme_type()).
+# High-tech dark performance theme, forced (not adaptive) — the visual
+# identity is a deliberate brand choice, not something that should flip to
+# light mode based on a visitor's OS setting.
 [theme]
-primaryColor = "#2a78d6"
+base = "dark"
+primaryColor = "#0066FF"
+backgroundColor = "#0D0E12"
+secondaryBackgroundColor = "#1A1D24"
+textColor = "#FFFFFF"
+font = "sans serif"

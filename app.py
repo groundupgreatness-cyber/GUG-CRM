@@ -41,7 +41,7 @@ if "is_admin" not in st.session_state:
     st.session_state["is_admin"] = False
 
 st.set_page_config(
-    page_title="GUG CRM", page_icon="💪", layout="wide",
+    page_title="GUG CRM", page_icon=":material/fitness_center:", layout="wide",
     initial_sidebar_state="expanded" if st.session_state["is_admin"] else "collapsed",
 )
 db.init_db()
@@ -58,7 +58,11 @@ def _check_admin_password(entered: str) -> bool:
     return bool(entered) and entered == real
 
 # ---------------------------------------------------------------------------
-# Design system: palette, theme detection, CSS injection, small components.
+# Design system: palette, CSS injection, small components.
+#
+# Fixed high-tech dark performance identity (spellmanperformance.com-style) —
+# a deliberate brand choice, not adaptive to a visitor's OS light/dark
+# setting. .streamlit/config.toml pins base="dark" to match.
 #
 # Colors follow a colorblind-validated categorical palette, used consistently
 # everywhere a 2-3-way split appears (session types, coach payouts, income vs
@@ -67,31 +71,27 @@ def _check_admin_password(entered: str) -> bool:
 # status, payment status, session overdraft — and never reused as a chart
 # series color. See the dataviz skill for the source palette.
 # ---------------------------------------------------------------------------
-def _theme_type() -> str:
-    """'light' or 'dark', from the viewer's actual Streamlit theme. Falls
-    back to 'light' if unavailable (e.g. a non-browser test context)."""
-    try:
-        t = st.context.theme.type
-        return t if t in ("light", "dark") else "light"
-    except Exception:
-        return "light"
-
-
-THEME = _theme_type()
-
-COLOR_BLUE = "#3987e5" if THEME == "dark" else "#2a78d6"
-COLOR_ORANGE = "#d95926" if THEME == "dark" else "#eb6834"
-COLOR_AQUA = "#199e70" if THEME == "dark" else "#1baf7a"
-
-COLOR_GOOD = "#0ca30c"
-COLOR_WARNING = "#fab219"
-COLOR_CRITICAL = "#d03b3b"
-
-CHART_MUTED_INK = "#898781"
-CHART_GRIDLINE = "#2c2c2a" if THEME == "dark" else "#e1e0d9"
+COLOR_BG = "#0D0E12"
+COLOR_CARD_BG = "#1A1D24"
+COLOR_CARD_BORDER = "#2A2E39"
+COLOR_TEXT_PRIMARY = "#FFFFFF"
+COLOR_TEXT_MUTED = "#9A9FAE"
+COLOR_ACCENT = "#0066FF"
+COLOR_ACCENT_HOVER = "#0052CC"
 
 # One consistent 3-color language reused by the calendar, the session-types
 # donut, and (separately) the payout donut — never mixed on the same chart.
+COLOR_BLUE = COLOR_ACCENT
+COLOR_ORANGE = "#FF8A00"
+COLOR_AQUA = "#14D8C4"
+
+COLOR_GOOD = "#22C55E"
+COLOR_WARNING = "#F5A623"
+COLOR_CRITICAL = "#EF4444"
+
+CHART_MUTED_INK = COLOR_TEXT_MUTED
+CHART_GRIDLINE = COLOR_CARD_BORDER
+
 SESSION_TYPE_COLORS = {
     "Strength": COLOR_BLUE, "Mobility": COLOR_AQUA, "Athletics": COLOR_ORANGE,
 }
@@ -100,14 +100,19 @@ PAYOUT_COLORS = {"Erez": COLOR_BLUE, "Yuval": COLOR_ORANGE, "Savings": COLOR_AQU
 
 def inject_custom_css():
     st.markdown(
-        """
+        f"""
         <style>
         /* ---- Typography & spacing --------------------------------------- */
-        html, body, [class*="css"] {
-            font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
-        }
-        h1, h2, h3 { letter-spacing: -0.01em; }
-        [data-testid="stMainBlockContainer"] { padding-top: 2rem; }
+        html, body, [class*="css"] {{
+            font-family: -apple-system, "Segoe UI", system-ui, sans-serif;
+        }}
+        h1, h2, h3 {{
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            font-weight: 800;
+            color: {COLOR_TEXT_PRIMARY};
+        }}
+        [data-testid="stMainBlockContainer"] {{ padding-top: 2rem; }}
 
         /* ---- Auto-direction for mixed Hebrew/English text -----------------
            Nearly every label in this app is bilingual ("English / עברית"),
@@ -120,237 +125,283 @@ def inject_custom_css():
         [data-testid="stMarkdownContainer"],
         [data-testid="stCaptionContainer"],
         [data-testid="stAlertContainer"],
-        [data-testid="stWidgetLabel"] {
+        [data-testid="stWidgetLabel"] {{
             unicode-bidi: plaintext;
-        }
+        }}
+        [data-testid="stCaptionContainer"] {{ color: {COLOR_TEXT_MUTED} !important; }}
 
         /* ---- Modern card look for native metrics -------------------------- */
-        [data-testid="stMetric"] {
-            background: rgba(135, 135, 130, 0.06);
-            border: 1px solid rgba(135, 135, 130, 0.18);
-            border-radius: 14px;
+        [data-testid="stMetric"] {{
+            background: {COLOR_CARD_BG};
+            border: 1px solid {COLOR_CARD_BORDER};
+            border-radius: 6px;
             padding: 14px 18px;
-            transition: box-shadow .15s ease, transform .15s ease;
-        }
-        [data-testid="stMetric"]:hover {
-            box-shadow: 0 4px 14px rgba(0,0,0,0.08);
-            transform: translateY(-1px);
-        }
+            transition: border-color .15s ease;
+        }}
+        [data-testid="stMetric"]:hover {{ border-color: {COLOR_ACCENT}; }}
+        [data-testid="stMetricLabel"] {{
+            text-transform: uppercase;
+            letter-spacing: .04em;
+            font-size: 12px !important;
+            color: {COLOR_TEXT_MUTED} !important;
+        }}
+        [data-testid="stMetricValue"] {{ font-weight: 800 !important; }}
 
-        /* ---- Rounded, breathable containers -------------------------------- */
-        [data-testid="stDataFrame"], [data-testid="stDataFrameResizable"] {
-            border-radius: 12px;
+        /* ---- Sharp, breathable containers ---------------------------------- */
+        [data-testid="stDataFrame"], [data-testid="stDataFrameResizable"] {{
+            border-radius: 6px;
             overflow: hidden;
-            border: 1px solid rgba(135, 135, 130, 0.18);
-        }
-        [data-testid="stExpander"] {
-            border-radius: 12px !important;
-            border: 1px solid rgba(135, 135, 130, 0.18) !important;
-        }
-        [data-testid="stForm"] {
-            border-radius: 14px;
-            border: 1px solid rgba(135, 135, 130, 0.16);
+            border: 1px solid {COLOR_CARD_BORDER};
+        }}
+        [data-testid="stExpander"] {{
+            border-radius: 6px !important;
+            border: 1px solid {COLOR_CARD_BORDER} !important;
+            background: {COLOR_CARD_BG} !important;
+        }}
+        [data-testid="stForm"] {{
+            border-radius: 6px;
+            border: 1px solid {COLOR_CARD_BORDER};
+            background: {COLOR_CARD_BG};
             padding: 1.2rem 1.2rem 0.4rem;
-        }
+        }}
 
-        /* ---- Buttons: rounded with a soft hover lift ----------------------- */
-        .stButton > button, .stFormSubmitButton > button, .stDownloadButton > button {
-            border-radius: 10px;
-            transition: box-shadow .15s ease, transform .15s ease;
-        }
+        /* ---- Buttons: flat, sharp, bold, high-contrast hover --------------- */
+        .stButton > button, .stFormSubmitButton > button, .stDownloadButton > button {{
+            border-radius: 5px;
+            font-weight: 700;
+            letter-spacing: .02em;
+            text-transform: uppercase;
+            border: 1px solid {COLOR_CARD_BORDER};
+            transition: background .12s ease, border-color .12s ease, color .12s ease;
+        }}
         .stButton > button:hover, .stFormSubmitButton > button:hover,
-        .stDownloadButton > button:hover {
-            box-shadow: 0 3px 10px rgba(0,0,0,0.10);
-            transform: translateY(-1px);
-        }
+        .stDownloadButton > button:hover {{
+            border-color: {COLOR_ACCENT};
+            color: {COLOR_ACCENT};
+        }}
+        .stButton > button[kind="primary"], .stFormSubmitButton > button[kind="primary"] {{
+            background: {COLOR_ACCENT};
+            border-color: {COLOR_ACCENT};
+        }}
+        .stButton > button[kind="primary"]:hover,
+        .stFormSubmitButton > button[kind="primary"]:hover {{
+            background: {COLOR_ACCENT_HOVER};
+            border-color: {COLOR_ACCENT_HOVER};
+            color: {COLOR_TEXT_PRIMARY};
+        }}
 
-        /* ---- Tabs: pill-style ---------------------------------------------- */
-        .stTabs [data-baseweb="tab-list"] { gap: 4px; }
-        .stTabs [data-baseweb="tab"] {
-            border-radius: 10px 10px 0 0;
+        /* ---- Tabs: sharp underline style ------------------------------------ */
+        .stTabs [data-baseweb="tab-list"] {{ gap: 4px; }}
+        .stTabs [data-baseweb="tab"] {{
+            border-radius: 4px 4px 0 0;
             padding: 8px 16px;
-        }
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: .02em;
+            font-size: 13px;
+        }}
+        .stTabs [aria-selected="true"] {{ color: {COLOR_ACCENT} !important; }}
 
         /* ---- Sidebar navigation: comfortable click targets ----------------- */
-        [data-testid="stSidebar"] [data-testid="stRadio"] label {
-            border-radius: 10px;
+        [data-testid="stSidebar"] {{
+            background: {COLOR_BG};
+            border-inline-end: 1px solid {COLOR_CARD_BORDER};
+        }}
+        [data-testid="stSidebar"] [data-testid="stRadio"] label {{
+            border-radius: 5px;
             padding: 6px 8px;
             transition: background .12s ease;
-        }
-        [data-testid="stSidebar"] [data-testid="stRadio"] label:hover {
-            background: rgba(135, 135, 130, 0.12);
-        }
+        }}
+        [data-testid="stSidebar"] [data-testid="stRadio"] label:hover {{
+            background: {COLOR_CARD_BG};
+        }}
+        [data-testid="stSidebar"] [data-testid="stRadio"] label[data-checked="true"] {{
+            background: rgba(0, 102, 255, 0.14);
+            border-inline-start: 3px solid {COLOR_ACCENT};
+        }}
 
         /* ---- WhatsApp quick-action button ----------------------------------- */
-        .gug-wa-btn {
+        .gug-wa-btn {{
             display: inline-flex;
             align-items: center;
             gap: 6px;
             background: #25D366;
             color: white !important;
             padding: 6px 14px;
-            border-radius: 999px;
-            font-size: 13px;
-            font-weight: 600;
+            border-radius: 5px;
+            font-size: 12.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .02em;
             text-decoration: none !important;
             white-space: nowrap;
             unicode-bidi: plaintext;
-            transition: box-shadow .15s ease, transform .15s ease;
-        }
-        .gug-wa-btn:hover {
-            box-shadow: 0 3px 10px rgba(37, 211, 102, 0.35);
-            transform: translateY(-1px);
-            color: white !important;
-        }
+            transition: filter .12s ease;
+        }}
+        .gug-wa-btn:hover {{ filter: brightness(1.1); color: white !important; }}
 
         /* ---- Public schedule cards (mobile-friendly) ------------------------ */
-        .gug-schedule-day {
-            font-size: 15px;
-            font-weight: 700;
+        .gug-schedule-day {{
+            font-size: 14px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+            color: {COLOR_TEXT_MUTED};
             margin: 20px 0 8px;
             unicode-bidi: plaintext;
-        }
-        .gug-schedule-card {
-            background: rgba(135, 135, 130, 0.06);
-            border: 1px solid rgba(135, 135, 130, 0.18);
-            border-radius: 14px;
+        }}
+        .gug-schedule-card {{
+            background: {COLOR_CARD_BG};
+            border: 1px solid {COLOR_CARD_BORDER};
+            border-radius: 6px;
             padding: 14px 16px;
             margin-bottom: 10px;
             unicode-bidi: plaintext;
-        }
-        .gug-schedule-card-title {
+        }}
+        .gug-schedule-card-title {{
             font-size: 15px;
             font-weight: 700;
             margin-bottom: 4px;
-        }
-        .gug-schedule-card-meta {
+            color: {COLOR_TEXT_PRIMARY};
+        }}
+        .gug-schedule-card-meta {{
             font-size: 13px;
-            opacity: .75;
+            color: {COLOR_TEXT_MUTED};
             margin-bottom: 2px;
-        }
-        .gug-schedule-seats {
+        }}
+        .gug-schedule-seats {{
             display: inline-block;
             margin-top: 6px;
-            font-size: 12.5px;
-            font-weight: 600;
+            font-size: 11.5px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: .02em;
             padding: 2px 10px;
-            border-radius: 999px;
-        }
-        .gug-schedule-seats-open {
-            background: rgba(12, 163, 12, 0.14);
-            color: #0ca30c;
-        }
-        .gug-schedule-seats-full {
-            background: rgba(208, 59, 59, 0.14);
-            color: #d03b3b;
-        }
+            border-radius: 4px;
+        }}
+        .gug-schedule-seats-open {{
+            background: rgba(34, 197, 94, 0.14);
+            color: {COLOR_GOOD};
+        }}
+        .gug-schedule-seats-full {{
+            background: rgba(239, 68, 68, 0.14);
+            color: {COLOR_CRITICAL};
+        }}
 
         /* ---- Weekly timetable grid (public + admin) ------------------------- */
-        .gug-week-nav-range {
+        .gug-week-nav-range {{
             text-align: center;
-            font-weight: 700;
-            font-size: 14px;
+            font-weight: 800;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: .03em;
             padding-top: 6px;
             unicode-bidi: plaintext;
-        }
-        .gug-week-day-header {
+        }}
+        .gug-week-day-header {{
             text-align: center;
-            font-weight: 700;
-            font-size: 13.5px;
+            font-weight: 800;
+            font-size: 12.5px;
+            text-transform: uppercase;
+            letter-spacing: .02em;
             padding: 6px 4px;
-            border-radius: 10px;
-            background: rgba(135, 135, 130, 0.08);
+            border-radius: 5px;
+            background: {COLOR_CARD_BG};
+            border: 1px solid {COLOR_CARD_BORDER};
             margin-bottom: 8px;
             unicode-bidi: plaintext;
-        }
-        .gug-week-day-date {
+        }}
+        .gug-week-day-date {{
             font-weight: 500;
-            font-size: 11.5px;
-            opacity: .7;
-        }
-        .gug-week-empty {
+            font-size: 11px;
+            color: {COLOR_TEXT_MUTED};
+            text-transform: none;
+        }}
+        .gug-week-empty {{
             text-align: center;
             font-size: 12px;
-            opacity: .5;
+            color: {COLOR_TEXT_MUTED};
             padding: 14px 4px;
             unicode-bidi: plaintext;
-        }
-        .gug-slot-block {
-            background: rgba(135, 135, 130, 0.06);
-            border: 1px solid rgba(135, 135, 130, 0.18);
-            border-inline-start: 4px solid #898781;
-            border-radius: 10px;
+        }}
+        .gug-slot-block {{
+            background: {COLOR_CARD_BG};
+            border: 1px solid {COLOR_CARD_BORDER};
+            border-inline-start: 3px solid {COLOR_TEXT_MUTED};
+            border-radius: 5px;
             padding: 8px 10px;
             margin-bottom: 6px;
             unicode-bidi: plaintext;
-        }
-        .gug-slot-time { font-size: 12.5px; font-weight: 700; }
-        .gug-slot-type { font-size: 12px; font-weight: 600; margin-top: 1px; }
-        .gug-slot-coach { font-size: 11.5px; opacity: .75; margin-top: 1px; }
-        .gug-slot-roster {
+        }}
+        .gug-slot-time {{ font-size: 12.5px; font-weight: 700; color: {COLOR_TEXT_PRIMARY}; }}
+        .gug-slot-type {{
+            font-size: 11.5px; font-weight: 700; margin-top: 1px;
+            text-transform: uppercase; letter-spacing: .02em;
+        }}
+        .gug-slot-coach {{ font-size: 11.5px; color: {COLOR_TEXT_MUTED}; margin-top: 1px; }}
+        .gug-slot-roster {{
             font-size: 11px;
-            opacity: .85;
+            color: {COLOR_TEXT_MUTED};
             margin: -2px 0 6px 2px;
             unicode-bidi: plaintext;
-        }
+        }}
         /* Force the grid's column row to scroll horizontally instead of
            stacking vertically on narrow screens — a "swipe the week" mobile
            timetable rather than one long stacked column. */
-        div[class*="st-key-week_grid_"] [data-testid="stHorizontalBlock"] {
+        div[class*="st-key-week_grid_"] [data-testid="stHorizontalBlock"] {{
             flex-wrap: nowrap !important;
             overflow-x: auto !important;
             padding-bottom: 8px;
-        }
+        }}
         div[class*="st-key-week_grid_"] [data-testid="stColumn"],
-        div[class*="st-key-week_grid_"] [data-testid="column"] {
+        div[class*="st-key-week_grid_"] [data-testid="column"] {{
             min-width: 148px !important;
             flex: 0 0 148px !important;
-        }
+        }}
 
         /* ---- Public self-booking button (Step 1 client identification) ----- */
-        div[class*="st-key-selfbook_"] button {
-            background-color: #25D366 !important;
+        div[class*="st-key-selfbook_"] button {{
+            background-color: {COLOR_ACCENT} !important;
             color: white !important;
-            border: 1px solid #25D366 !important;
-            font-weight: 600 !important;
-        }
-        div[class*="st-key-selfbook_"] button:hover {
-            background-color: #1fb959 !important;
-            border-color: #1fb959 !important;
-        }
+            border: 1px solid {COLOR_ACCENT} !important;
+            font-weight: 700 !important;
+        }}
+        div[class*="st-key-selfbook_"] button:hover {{
+            background-color: {COLOR_ACCENT_HOVER} !important;
+            border-color: {COLOR_ACCENT_HOVER} !important;
+        }}
 
         /* ---- Custom KPI cards ---------------------------------------------- */
-        .gug-kpi-row {
+        .gug-kpi-row {{
             display: flex;
             gap: 12px;
             flex-wrap: wrap;
             margin: 4px 0 18px;
-        }
-        .gug-kpi-card {
+        }}
+        .gug-kpi-card {{
             flex: 1 1 170px;
             min-width: 155px;
-            background: rgba(135, 135, 130, 0.06);
-            border: 1px solid rgba(135, 135, 130, 0.18);
-            border-radius: 16px;
+            background: {COLOR_CARD_BG};
+            border: 1px solid {COLOR_CARD_BORDER};
+            border-radius: 6px;
             padding: 16px 18px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-            transition: box-shadow .15s ease, transform .15s ease;
+            transition: border-color .15s ease;
             unicode-bidi: plaintext;
-        }
-        .gug-kpi-card:hover {
-            box-shadow: 0 5px 16px rgba(0,0,0,0.10);
-            transform: translateY(-2px);
-        }
-        .gug-kpi-icon { font-size: 20px; margin-bottom: 6px; }
-        .gug-kpi-label {
-            font-size: 12.5px; font-weight: 600; letter-spacing: .01em;
-            opacity: .72; margin-bottom: 4px; unicode-bidi: plaintext;
-        }
-        .gug-kpi-value { font-size: 25px; font-weight: 700; line-height: 1.15; }
-        .gug-kpi-sub {
-            font-size: 12px; opacity: .65; margin-top: 3px;
+        }}
+        .gug-kpi-card:hover {{ border-color: var(--gug-kpi-accent, {COLOR_ACCENT}); }}
+        .gug-kpi-label {{
+            font-size: 11.5px; font-weight: 700; letter-spacing: .04em;
+            text-transform: uppercase; color: {COLOR_TEXT_MUTED};
+            margin-bottom: 6px; unicode-bidi: plaintext;
+        }}
+        .gug-kpi-value {{
+            font-size: 26px; font-weight: 800; line-height: 1.15;
+            color: {COLOR_TEXT_PRIMARY};
+        }}
+        .gug-kpi-sub {{
+            font-size: 12px; color: {COLOR_TEXT_MUTED}; margin-top: 3px;
             unicode-bidi: plaintext;
-        }
+        }}
         </style>
         """,
         unsafe_allow_html=True,
@@ -359,23 +410,24 @@ def inject_custom_css():
 
 inject_custom_css()
 
-ACCENT_CLASS = {"blue": "#2a78d6", "orange": "#eb6834", "aqua": "#1baf7a",
+ACCENT_CLASS = {"blue": COLOR_BLUE, "orange": COLOR_ORANGE, "aqua": COLOR_AQUA,
                 "good": COLOR_GOOD, "warning": COLOR_WARNING,
                 "critical": COLOR_CRITICAL}
 
 
 def kpi_row(cards: list[dict]):
     """Render a responsive row of custom KPI cards. Each dict:
-    {'icon': str, 'label': str, 'value': str, 'sub': str (optional),
-    'accent': one of ACCENT_CLASS}."""
+    {'label': str, 'value': str, 'sub': str (optional),
+    'accent': one of ACCENT_CLASS}. No icons — the accent-colored left
+    border and uppercase label carry the visual distinction instead."""
     html = ['<div class="gug-kpi-row">']
     for c in cards:
-        accent = ACCENT_CLASS.get(c.get("accent"), "#898781")
+        accent = ACCENT_CLASS.get(c.get("accent"), COLOR_TEXT_MUTED)
         sub = (f'<div class="gug-kpi-sub">{c["sub"]}</div>'
                if c.get("sub") else "")
         html.append(
-            f'<div class="gug-kpi-card" style="border-inline-start:3px solid {accent};">'
-            f'<div class="gug-kpi-icon">{c.get("icon", "")}</div>'
+            f'<div class="gug-kpi-card" style="border-inline-start:3px solid {accent};'
+            f'--gug-kpi-accent:{accent};">'
             f'<div class="gug-kpi-label">{c["label"]}</div>'
             f'<div class="gug-kpi-value">{c["value"]}</div>'
             f'{sub}</div>'
@@ -392,11 +444,11 @@ def whatsapp_button(label: str, url: str | None):
     (target="_blank" + rel="noopener noreferrer"). Shows a muted note
     instead of a dead link when the client has no valid phone number."""
     if not url:
-        st.caption("📵 No phone")
+        st.caption("No phone")
         return
     st.markdown(
         f'<a href="{url}" target="_blank" rel="noopener noreferrer" '
-        f'class="gug-wa-btn">💬 {label}</a>',
+        f'class="gug-wa-btn">{label}</a>',
         unsafe_allow_html=True,
     )
 
@@ -458,7 +510,7 @@ def income_expense_bar_chart(df: pd.DataFrame) -> go.Figure:
     return _chart_layout(fig, height=340, title="Income vs Expenses — Last 6 Months")
 
 
-st.sidebar.title("💪 GUG CRM")
+st.sidebar.title("GUG CRM")
 
 if st.session_state["is_admin"]:
     # --- Authenticated: full CRM navigation -------------------------------
@@ -474,7 +526,7 @@ if st.session_state["is_admin"]:
         ],
     )
     st.sidebar.divider()
-    if st.sidebar.button("🔓 Logout / התנתקות"):
+    if st.sidebar.button("Logout / התנתקות"):
         st.session_state["is_admin"] = False
         st.rerun()
     st.sidebar.caption("Ground Up Greatness — business management")
@@ -484,7 +536,7 @@ else:
     # and nothing here exposes a way to reach any other page. -------------
     page = None
     st.sidebar.caption("לוח אימונים ציבורי / Public schedule")
-    with st.sidebar.expander("🔐 Coach Login / כניסת מאמנים"):
+    with st.sidebar.expander("Coach Login / כניסת מאמנים"):
         with st.form("admin_login", clear_on_submit=True):
             entered_pw = st.text_input("Password / סיסמה", type="password")
             login_submitted = st.form_submit_button("Login")
@@ -569,13 +621,33 @@ def ils(amount: float) -> str:
     return f"₪{amount:,.0f}"
 
 
+CLIENT_STATUS_COLORS = {config.CLIENT_STATUS_BADGES["Active"]: COLOR_GOOD,
+                        config.CLIENT_STATUS_BADGES["Inactive"]: COLOR_TEXT_MUTED}
+PAYMENT_STATUS_COLORS = {config.PAYMENT_STATUSES["Paid"]: COLOR_GOOD,
+                         config.PAYMENT_STATUSES["Partial"]: COLOR_WARNING,
+                         config.PAYMENT_STATUSES["Pending"]: COLOR_CRITICAL}
+TRANSACTION_TYPE_COLORS = {"Income": COLOR_BLUE, "Expense": COLOR_ORANGE}
+
+
+def _style_status_column(df: pd.DataFrame, column: str, color_map: dict[str, str]):
+    """A pandas Styler coloring `column`'s cells by value — the
+    dataframe-safe replacement for the old emoji-dot status badges, since
+    st.dataframe can't render arbitrary HTML per cell but does render a
+    Styler's computed background/text color natively."""
+    def _cell(val):
+        color = color_map.get(val)
+        return (f"background-color:{color}26; color:{color}; font-weight:700;"
+               if color else "")
+    return df.style.map(_cell, subset=[column])
+
+
 def session_status_label(row) -> str:
     """Badge text for a session row: flags an Overdraft (חריגה) session in
     red, a normal deduction in green, else a neutral 'no deduction' note."""
     if logic.OVERDRAFT_TAG in (row.get("notes") or ""):
-        return "🔴 Overdraft / חריגה"
+        return "Overdraft / חריגה"
     if row.get("sessions_deducted"):
-        return "🟢 Deducted"
+        return "Deducted"
     return "— No deduction"
 
 
@@ -602,7 +674,7 @@ def page_clients():
     st.title("Clients & Packages")
 
     tab_new, tab_assign, tab_view = st.tabs(
-        ["➕ New Client", "🎫 Assign Package", "📋 Client List & Balances"]
+        ["New Client", "Assign Package", "Client List & Balances"]
     )
 
     # --- New client form -----------------------------------------------------
@@ -635,7 +707,7 @@ def page_clients():
             status_key, entered_amount = payment_fields("newclient")
             record_income = st.checkbox(
                 "Record the collected amount as income", value=True)
-            submitted = st.form_submit_button("➕ Add Client")
+            submitted = st.form_submit_button("Add Client")
 
         if submitted:
             try:
@@ -653,9 +725,9 @@ def page_clients():
                 bump_data()
                 st.success(msg)
             except logic.ValidationError as e:
-                st.error(f"⚠️ {e}")
+                st.error(str(e))
             except Exception as e:
-                st.error(f"❌ Could not save the client: {e}")
+                st.error(f"Could not save the client: {e}")
 
     # --- Assign package / subscription --------------------------------------
     with tab_assign:
@@ -690,9 +762,9 @@ def page_clients():
                         bump_data()
                         st.success(msg)
                     except logic.ValidationError as e:
-                        st.error(f"⚠️ {e}")
+                        st.error(str(e))
                     except Exception as e:
-                        st.error(f"❌ Could not assign the membership: {e}")
+                        st.error(f"Could not assign the membership: {e}")
 
             elif kind.startswith("Frontal"):
                 pack_options = {
@@ -713,9 +785,9 @@ def page_clients():
                         bump_data()
                         st.success(msg)
                     except logic.ValidationError as e:
-                        st.error(f"⚠️ {e}")
+                        st.error(str(e))
                     except Exception as e:
-                        st.error(f"❌ Could not assign the package: {e}")
+                        st.error(f"Could not assign the package: {e}")
 
             else:
                 sub_options = {
@@ -740,9 +812,9 @@ def page_clients():
                         bump_data()
                         st.success(msg)
                     except logic.ValidationError as e:
-                        st.error(f"⚠️ {e}")
+                        st.error(str(e))
                     except Exception as e:
-                        st.error(f"❌ Could not assign the subscription: {e}")
+                        st.error(f"Could not assign the subscription: {e}")
 
     # --- Client list ---------------------------------------------------------
     with tab_view:
@@ -773,16 +845,17 @@ def page_clients():
             view["subscriptions"] = view["id"].map(subs).fillna("—")
             view["status"] = view["status"].map(
                 config.CLIENT_STATUS_BADGES).fillna(view["status"])
+            table = view[["id", "name", "phone", "service_type", "status",
+                          "remaining_sessions", "subscriptions", "created_at"]]
             st.dataframe(
-                view[["id", "name", "phone", "service_type", "status",
-                      "remaining_sessions", "subscriptions", "created_at"]],
+                _style_status_column(table, "status", CLIENT_STATUS_COLORS),
                 use_container_width=True,
                 hide_index=True,
             )
 
             # Quick Contact — contextual WhatsApp actions for one client
             st.divider()
-            st.subheader("💬 Quick Contact / יצירת קשר מהירה")
+            st.subheader("Quick Contact / יצירת קשר מהירה")
             contact_id, _ = client_selector(
                 "Client to contact", active_only=False, key="contact_client")
             if contact_id:
@@ -805,7 +878,7 @@ def page_clients():
                             name=crow["name"])
                         whatsapp_button("Payment Reminder", link)
                     else:
-                        st.caption("✅ No open balance")
+                        st.caption("No open balance")
                 with wa_col2:
                     if is_low:
                         link = logic.whatsapp_link(
@@ -942,7 +1015,7 @@ def render_recent_sessions(client_id: int):
                     whatsapp_button("Confirm", wa_link)
                 else:
                     st.caption("—")
-            if col_del.button("🗑️", key=f"del_sess_{row['id']}",
+            if col_del.button("X", key=f"del_sess_{row['id']}",
                               help="Delete this session log"):
                 result = logic.delete_session(int(row["id"]))
                 if result["restored"]:
@@ -999,7 +1072,7 @@ def page_log_calendar():
                     placeholder="e.g. Lower body strength, PR on squat")
                 deduct = st.checkbox("Deduct 1 session from pack",
                                      value=pack_exists)
-                submitted = st.form_submit_button("✅ Log Completed Session")
+                submitted = st.form_submit_button("Log Completed Session")
 
             if submitted:
                 try:
@@ -1018,7 +1091,7 @@ def page_log_calendar():
                             f"**{result['remaining']}** remaining."
                         )
                         if result["remaining"] == 0:
-                            st.warning("⚠️ Pack finished! "
+                            st.warning("Pack finished! "
                                        "Time to offer a renewal.")
                         crow = db.fetch_client(client_id)
                         wa_link = logic.whatsapp_link(
@@ -1030,16 +1103,16 @@ def page_log_calendar():
                         whatsapp_button("Send Confirmation", wa_link)
                     elif result["overdraft"]:
                         st.warning(
-                            "⚠️ Session logged as **Overdraft / חריגה** — "
+                            "Session logged as **Overdraft / חריגה** — "
                             "the client's packs have 0 sessions left. "
                             "Consider assigning a new pack or collecting "
                             "payment.")
                     else:
                         st.success("Session logged (no deduction).")
                 except logic.ValidationError as e:
-                    st.error(f"⚠️ {e}")
+                    st.error(str(e))
                 except Exception as e:
-                    st.error(f"❌ Could not log the session: {e}")
+                    st.error(f"Could not log the session: {e}")
 
             with stats_box:
                 render_client_stats(client_id)
@@ -1132,13 +1205,15 @@ def render_calendar():
     cal_key = f"cal_{hash((tuple(sessions['id']), client_choice, type_choice))}"
     st_calendar(events=events, options=options, key=cal_key)
 
+    dot = ('<span style="display:inline-block;width:8px;height:8px;'
+          'border-radius:50%;background:{c};margin-inline-end:4px;"></span>')
     st.markdown(
         f"**{len(events)} session(s) shown**&nbsp;&nbsp;•&nbsp;&nbsp;"
         + " ".join(
-            f'<span style="color:{c}">⬤</span> {config.SESSION_TYPES[t]}&nbsp;&nbsp;'
+            dot.format(c=c) + f'{config.SESSION_TYPES[t]}&nbsp;&nbsp;'
             for t, c in SESSION_TYPE_COLORS.items()
         )
-        + f'<span style="color:{CALENDAR_UNTYPED_COLOR}">⬤</span> ללא סוג',
+        + dot.format(c=CALENDAR_UNTYPED_COLOR) + "ללא סוג",
         unsafe_allow_html=True,
     )
 
@@ -1155,18 +1230,19 @@ def render_debts_tab():
     debts = db.get_debts()
     st.metric("Total Unpaid Balance / חובות פתוחים", ils(db.get_total_unpaid()))
     if debts.empty:
-        st.success("No open debts — everyone is paid up! 🎉")
+        st.success("No open debts — everyone is paid up!")
         return
 
     view = debts.copy()
     view["payment_status"] = view["payment_status"].map(
         config.PAYMENT_STATUSES).fillna(view["payment_status"])
+    table = view[["client_name", "package_type", "price", "amount_paid",
+                  "balance", "payment_status", "start_date"]]
     st.dataframe(
-        view[["client_name", "package_type", "price", "amount_paid",
-              "balance", "payment_status", "start_date"]],
+        _style_status_column(table, "payment_status", PAYMENT_STATUS_COLORS),
         use_container_width=True, hide_index=True)
 
-    st.subheader("💰 Record a debt payment")
+    st.subheader("Record a debt payment")
     debt_options = {
         f"{r['client_name']} — {r['package_type']} "
         f"(balance {ils(r['balance'])})": r
@@ -1187,21 +1263,21 @@ def render_debts_tab():
         pay_date = st.date_input("Date", value=date.today())
     record_income = st.checkbox("Record as income (Debt Collection)",
                                 value=True)
-    if st.button("💰 Record Payment") and amount > 0:
+    if st.button("Record Payment") and amount > 0:
         try:
             result = logic.record_debt_payment(
                 int(chosen["id"]), amount, pay_method, pay_date,
                 record_income)
         except logic.ValidationError as e:
-            st.error(f"⚠️ {e}")
+            st.error(str(e))
             st.stop()
         except Exception as e:
-            st.error(f"❌ Could not record the payment: {e}")
+            st.error(f"Could not record the payment: {e}")
             st.stop()
         bump_data()
         status_label = config.PAYMENT_STATUSES[result["status"]]
         st.session_state["debt_msg"] = (
-            f"✅ {ils(amount)} collected from {chosen['client_name']} — "
+            f"{ils(amount)} collected from {chosen['client_name']} — "
             f"status now {status_label}, remaining balance "
             f"{ils(result['balance'])}.")
         st.rerun()
@@ -1231,12 +1307,12 @@ def render_partner_payouts_tab():
 
     if result["pending_total"] > 0:
         st.warning(
-            f"⚠️ {ils(result['pending_total'])} in Frontal Training income "
+            f"{ils(result['pending_total'])} in Frontal Training income "
             "is pending trainer assignment (savings are still allocated — "
             "only the Erez/Yuval split is on hold). Log the related "
             "sessions with a trainer, or add a manual adjustment below.")
 
-    st.subheader("📋 How this month's revenue was split")
+    st.subheader("How this month's revenue was split")
     if result["rows"]:
         detail = pd.DataFrame(result["rows"])
         detail = detail.rename(columns={
@@ -1250,7 +1326,7 @@ def render_partner_payouts_tab():
         st.info("No income recorded for this month yet.")
 
     st.divider()
-    st.subheader("✏️ Manual Payout Adjustment / התאמה ידנית")
+    st.subheader("Manual Payout Adjustment / התאמה ידנית")
     st.caption("Corrects or records payouts the automatic split can't "
                "cover — e.g. a cash tip, a one-off arrangement, or fixing a "
                "past error. Amounts add to the totals above and can be "
@@ -1267,7 +1343,7 @@ def render_partner_payouts_tab():
             savings_amt = st.number_input("Savings amount (ILS)", step=10.0,
                                           format="%.2f")
         reason = st.text_input("Reason / הסבר *")
-        submitted = st.form_submit_button("💾 Save Adjustment")
+        submitted = st.form_submit_button("Save Adjustment")
 
     if submitted:
         try:
@@ -1275,13 +1351,13 @@ def render_partner_payouts_tab():
                                         savings_amt, reason)
             bump_data()
             st.session_state["payout_msg"] = (
-                f"✅ Adjustment saved for {month}: Erez {ils(erez_amt)} / "
+                f"Adjustment saved for {month}: Erez {ils(erez_amt)} / "
                 f"Yuval {ils(yuval_amt)} / Savings {ils(savings_amt)}.")
             st.rerun()
         except logic.ValidationError as e:
-            st.error(f"⚠️ {e}")
+            st.error(str(e))
         except Exception as e:
-            st.error(f"❌ Could not save the adjustment: {e}")
+            st.error(f"Could not save the adjustment: {e}")
 
     adjustments = db.get_payout_adjustments(month)
     if not adjustments.empty:
@@ -1293,7 +1369,7 @@ def render_partner_payouts_tab():
             cols[2].write(ils(row["savings_amount"]))
             cols[3].write(row["created_at"][:16])
             cols[4].write(row["reason"] or "—")
-            if cols[5].button("🗑️", key=f"del_adj_{row['id']}",
+            if cols[5].button("X", key=f"del_adj_{row['id']}",
                               help="Delete this adjustment"):
                 db.delete_payout_adjustment(int(row["id"]))
                 bump_data()
@@ -1304,8 +1380,8 @@ def page_finance():
     st.title("Finance — Income & Expenses")
 
     tab_add, tab_view, tab_debts, tab_payouts = st.tabs(
-        ["➕ Add Transaction", "📒 Transactions", "💳 Debts / חובות",
-         "💼 Partner Payouts / חלוקת שכר"])
+        ["Add Transaction", "Transactions", "Debts / חובות",
+         "Partner Payouts / חלוקת שכר"])
 
     with tab_debts:
         render_debts_tab()
@@ -1350,7 +1426,7 @@ def page_finance():
                     bump_data()
                     st.success(f"{tx_type} of {ils(amount)} recorded.")
                 except Exception as e:
-                    st.error(f"❌ Could not record the transaction: {e}")
+                    st.error(f"Could not record the transaction: {e}")
 
     with tab_view:
         fin_msg = st.session_state.pop("fin_edit_msg", None)
@@ -1379,15 +1455,12 @@ def page_finance():
         if tx.empty:
             st.info("No transactions match the current filters.")
         else:
-            tx_view = tx.copy()
-            tx_view["type"] = tx_view["type"].map(
-                {"Income": "🔵 Income", "Expense": "🟠 Expense"}).fillna(
-                tx_view["type"])
+            tx_table = tx[["date", "type", "amount", "category", "payment_method",
+                          "reference_number", "client_name", "notes"]]
             st.dataframe(
-                tx_view[["date", "type", "amount", "category", "payment_method",
-                        "reference_number", "client_name", "notes"]],
+                _style_status_column(tx_table, "type", TRANSACTION_TYPE_COLORS),
                 use_container_width=True, hide_index=True)
-            with st.expander("✏️ Edit / delete these transactions"):
+            with st.expander("Edit / delete these transactions"):
                 _transactions_editor(tx, key="fin", msg_key="fin_edit_msg")
 
 
@@ -1425,14 +1498,14 @@ def _packages_editor():
         },
         use_container_width=True,
     )
-    if st.button("💾 Save package changes"):
+    if st.button("Save package changes"):
         n, errors = logic.apply_package_edits(pkgs, edited)
         bump_data()
         for e in errors:
             st.error(e)
         if n:
             st.session_state["dash_edit_msg"] = (
-                f"✅ {n} package record(s) updated — balances and dashboard "
+                f"{n} package record(s) updated — balances and dashboard "
                 "metrics recalculated.")
             st.rerun()
         elif not errors:
@@ -1446,7 +1519,7 @@ def _transactions_editor(tx: pd.DataFrame, key: str = "tx",
     session_state slot the caller reads its confirmation message from."""
     st.caption("Edit amounts, categories, dates, reference numbers or notes. "
                "Delete a row with the row checkbox + Delete, or add one with "
-               "➕. Changes apply when you press Save.")
+               "the add-row button. Changes apply when you press Save.")
     if tx.empty:
         st.info("No transactions to edit.")
         return
@@ -1476,7 +1549,7 @@ def _transactions_editor(tx: pd.DataFrame, key: str = "tx",
         },
         use_container_width=True,
     )
-    if st.button("💾 Save transaction changes", key=f"{key}_save"):
+    if st.button("Save transaction changes", key=f"{key}_save"):
         n_upd, n_del, n_add, errors = logic.apply_transaction_edits(tx, edited)
         bump_data()
         for e in errors:
@@ -1490,7 +1563,7 @@ def _transactions_editor(tx: pd.DataFrame, key: str = "tx",
             if n_add:
                 parts.append(f"{n_add} added")
             st.session_state[msg_key] = (
-                f"✅ Transactions saved ({', '.join(parts)}) — dashboard "
+                f"Transactions saved ({', '.join(parts)}) — dashboard "
                 "totals recalculated.")
             st.rerun()
         elif not errors:
@@ -1501,7 +1574,7 @@ def render_pnl(month: str | None):
     """Profit & Loss card for the given 'YYYY-MM' month (None = all time)."""
     result = logic.pnl(month)
     label = "All time" if month is None else month
-    st.markdown(f"**📈 P&L — {label}**")
+    st.markdown(f"**P&L — {label}**")
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Total Income", ils(result["income"]))
     c2.metric("Total Expenses", ils(result["expense"]))
@@ -1523,15 +1596,15 @@ def page_dashboard():
 
     st.subheader(stats["month_label"])
     kpi_row([
-        {"icon": "👥", "label": "Active Clients", "accent": "blue",
+        {"label": "Active Clients", "accent": "blue",
          "value": str(stats["active_clients"])},
-        {"icon": "🏋️", "label": "Sessions This Month", "accent": "aqua",
+        {"label": "Sessions This Month", "accent": "aqua",
          "value": str(stats["sessions_this_month"])},
-        {"icon": "💰", "label": "Income This Month", "accent": "blue",
+        {"label": "Income This Month", "accent": "blue",
          "value": ils(stats["finance"]["income"])},
-        {"icon": "📈", "label": "Net This Month", "accent": "good",
+        {"label": "Net This Month", "accent": "good",
          "value": ils(stats["finance"]["net"])},
-        {"icon": "⚠️", "label": "Total Unpaid / חובות פתוחים",
+        {"label": "Total Unpaid / חובות פתוחים",
          "accent": "critical" if stats["total_unpaid"] else "good",
          "value": ils(stats["total_unpaid"])},
     ])
@@ -1589,18 +1662,18 @@ def page_dashboard():
 
     # --- Requires Attention: debts · low sessions · inactivity -------------
     st.divider()
-    st.subheader("🔔 Requires Attention / דורש טיפול")
+    st.subheader("Requires Attention / דורש טיפול")
     inactive_clients = logic.detect_inactive_clients()
 
     tab_debts, tab_low, tab_inactive = st.tabs([
-        f"💳 Pending Payments ({len(stats['debts'])})",
-        f"⚠️ Low Sessions ({len(stats['low_packs'])})",
-        f"👻 Inactivity ({len(inactive_clients)})",
+        f"Pending Payments ({len(stats['debts'])})",
+        f"Low Sessions ({len(stats['low_packs'])})",
+        f"Inactivity ({len(inactive_clients)})",
     ])
 
     with tab_debts:
         if stats["debts"].empty:
-            st.success("No open debts — everyone is paid up! 🎉")
+            st.success("No open debts — everyone is paid up!")
         else:
             for _, row in stats["debts"].iterrows():
                 c1, c2, c3 = st.columns([3, 3, 2])
@@ -1613,7 +1686,7 @@ def page_dashboard():
                         row["phone"], "payment_reminder",
                         name=row["client_name"])
                     whatsapp_button("Remind", link)
-            st.caption("Collect payments in Finance → 💳 Debts / חובות.")
+            st.caption("Collect payments in Finance → Debts / חובות.")
 
     with tab_low:
         if stats["low_packs"].empty:
@@ -1633,7 +1706,7 @@ def page_dashboard():
             f"Active clients with no logged session in "
             f"{config.INACTIVITY_THRESHOLD_DAYS}+ days.")
         if inactive_clients.empty:
-            st.success("No inactive clients — everyone's engaged! 💪")
+            st.success("No inactive clients — everyone's engaged!")
         else:
             for _, row in inactive_clients.iterrows():
                 c1, c2, c3 = st.columns([3, 3, 2])
@@ -1648,13 +1721,13 @@ def page_dashboard():
     # --- Quick-edit mode ----------------------------------------------------
     st.divider()
     edit_mode = st.toggle(
-        "🛠️ Edit Dashboard Data",
+        "Edit Dashboard Data",
         help="Inline-edit package balances, subscription rates/dates and "
              "financial transactions. Changes are saved to the database and "
              "the metrics above update immediately.")
     if edit_mode:
         tab_pkg, tab_fin = st.tabs(
-            ["📦 Packages & Session Balances", "💰 Financial Transactions"])
+            ["Packages & Session Balances", "Financial Transactions"])
         with tab_pkg:
             _packages_editor()
         with tab_fin:
@@ -1662,7 +1735,7 @@ def page_dashboard():
                                  key="dash", msg_key="dash_edit_msg")
 
     st.divider()
-    st.subheader("🕒 Latest sessions")
+    st.subheader("Latest sessions")
     recent = cached_sessions(_ver(), None, 10)
     if recent.empty:
         st.info("No sessions logged yet.")
@@ -1696,9 +1769,9 @@ def _slot_card_html(row) -> str:
     available = int(row["available_seats"])
     return (
         f'<div class="gug-slot-block" style="border-inline-start-color:{color};">'
-        f'<div class="gug-slot-time">🕐 {row["start_time"]}–{row["end_time"]}</div>'
+        f'<div class="gug-slot-time">{row["start_time"]}–{row["end_time"]}</div>'
         f'<div class="gug-slot-type" style="color:{color};">{type_label}</div>'
-        f'<div class="gug-slot-coach">🏋️ {coach_label}</div>'
+        f'<div class="gug-slot-coach">{coach_label}</div>'
         f'{_slot_seats_badge(available)}'
         f'</div>'
     )
@@ -1735,12 +1808,12 @@ def _week_days(offset: int) -> list:
 
 
 def render_public_schedule_view():
-    st.subheader("📅 לוח האימונים השבועי / Weekly Schedule")
+    st.subheader("לוח האימונים השבועי / Weekly Schedule")
     st.caption("זהו את עצמכם והירשמו ישירות מהלוח, או בקשו הרשמה ב-WhatsApp.")
 
     # --- Step 1: simple client self-identification (phone only — never a
     # name dropdown, which would require listing every client publicly). ---
-    st.markdown("**🔎 זיהוי מתאמן/ת / Identify yourself (optional)**")
+    st.markdown("**זיהוי מתאמן/ת / Identify yourself (optional)**")
     phone_entry = st.text_input(
         "כבר יש לך כרטיסייה? הזן/י את מספר הטלפון שלך כדי להירשם ישירות",
         key="public_phone_lookup", placeholder="050-1234567")
@@ -1759,7 +1832,7 @@ def render_public_schedule_view():
             hello = f"היי {lookup['name']}, " if lookup else ""
             st.info(
                 f"{hello}לא נמצאה כרטיסייה פעילה עם אימונים זמינים למספר הזה. "
-                "שלחו לארז הודעה ונדאג לזה 💪")
+                "שלחו לארז הודעה ונדאג לזה")
             whatsapp_button("היי ארז, אשמח לחדש כרטיסייה!",
                             logic.renewal_whatsapp_link())
 
@@ -1800,8 +1873,8 @@ def render_public_schedule_view():
                         continue
                     if lookup and has_balance:
                         if logic.is_client_booked_in_slot(slot_id, lookup["client_id"]):
-                            st.caption("✅ נרשמת")
-                        elif st.button("✅ אני רוצה להירשם", key=f"selfbook_{slot_id}",
+                            st.caption("נרשמת")
+                        elif st.button("אני רוצה להירשם", key=f"selfbook_{slot_id}",
                                       width="stretch"):
                             try:
                                 result = logic.book_client_to_slot(
@@ -1814,7 +1887,7 @@ def render_public_schedule_view():
                                     st.success(f"נרשמת! נותרו {remaining} אימונים.")
                                 st.rerun()
                             except logic.ValidationError as e:
-                                st.error(f"⚠️ {e}")
+                                st.error(str(e))
                     else:
                         link = logic.booking_whatsapp_link(
                             row["session_type"], row["day_of_week"],
@@ -1842,7 +1915,7 @@ def _slot_edit_popover(slot):
         e_capacity = st.number_input(
             "Max capacity", min_value=1, step=1, value=int(slot["max_capacity"]))
         e_notes = st.text_input("Notes", value=slot["notes"] or "")
-        e_submitted = st.form_submit_button("💾 Save changes")
+        e_submitted = st.form_submit_button("Save changes")
     if e_submitted:
         try:
             e_coach = [k for k, v in config.TRAINERS.items()
@@ -1856,15 +1929,15 @@ def _slot_edit_popover(slot):
             st.success("Slot updated.")
             st.rerun()
         except logic.ValidationError as e:
-            st.error(f"⚠️ {e}")
+            st.error(str(e))
         except Exception as e:
-            st.error(f"❌ Could not update the slot: {e}")
+            st.error(f"Could not update the slot: {e}")
 
 
 def _slot_add_client_popover(slot):
     slot_id = int(slot["id"])
     client_id, _ = client_selector("Client", key=f"slot_client_{slot_id}")
-    if client_id and st.button("➕ Assign to slot", key=f"assign_{slot_id}"):
+    if client_id and st.button("Assign to slot", key=f"assign_{slot_id}"):
         try:
             result = logic.book_client_to_slot(slot_id, client_id)
             bump_data()
@@ -1878,9 +1951,9 @@ def _slot_add_client_popover(slot):
             st.success(msg)
             st.rerun()
         except logic.ValidationError as e:
-            st.error(f"⚠️ {e}")
+            st.error(str(e))
         except Exception as e:
-            st.error(f"❌ Could not assign the client: {e}")
+            st.error(f"Could not assign the client: {e}")
 
 
 def _slot_add_dropin_popover(slot):
@@ -1893,7 +1966,7 @@ def _slot_add_dropin_popover(slot):
         with c2:
             pay_method = st.selectbox("Payment method", config.PAYMENT_METHODS,
                                       key=f"pm_{slot_id}")
-        submitted = st.form_submit_button("➕ Log Drop-in")
+        submitted = st.form_submit_button("Log Drop-in")
     if submitted:
         try:
             result = logic.book_dropin_to_slot(slot_id, name, price, pay_method)
@@ -1902,9 +1975,9 @@ def _slot_add_dropin_popover(slot):
                       "by the payout engine.")
             st.rerun()
         except logic.ValidationError as e:
-            st.error(f"⚠️ {e}")
+            st.error(str(e))
         except Exception as e:
-            st.error(f"❌ Could not log the drop-in: {e}")
+            st.error(f"Could not log the drop-in: {e}")
 
 
 def _slot_roster_and_removal(bookings):
@@ -1916,7 +1989,7 @@ def _slot_roster_and_removal(bookings):
         display_name = (b["client_name"] if b["booking_type"] == "client"
                         else f"{b['dropin_name']} (מזדמן)")
         bc1.write(display_name)
-        if bc2.button("✖", key=f"rm_booking_{b['id']}", help="Remove from this slot"):
+        if bc2.button("X", key=f"rm_booking_{b['id']}", help="Remove from this slot"):
             try:
                 result = logic.remove_slot_booking(int(b["id"]))
                 bump_data()
@@ -1926,7 +1999,7 @@ def _slot_roster_and_removal(bookings):
                     st.success("Removed from the slot.")
                 st.rerun()
             except logic.ValidationError as e:
-                st.error(f"⚠️ {e}")
+                st.error(str(e))
 
 
 def _slot_cancel_control(slot_id: int, attendees: int):
@@ -1937,21 +2010,21 @@ def _slot_cancel_control(slot_id: int, attendees: int):
     confirm_key = f"confirm_del_{slot_id}"
     if st.session_state.get(confirm_key):
         if attendees > 0:
-            st.caption("⚠️ Won't restore attendees' sessions.")
+            st.caption("Won't restore attendees' sessions.")
         cc1, cc2 = st.columns(2)
-        if cc1.button("✅", key=f"del_yes_{slot_id}", help="Confirm delete",
+        if cc1.button("YES", key=f"del_yes_{slot_id}", help="Confirm delete",
                       width="stretch"):
             logic.delete_schedule_slot(slot_id)
             bump_data()
             st.session_state.pop(confirm_key, None)
             st.success("Slot deleted.")
             st.rerun()
-        if cc2.button("❌", key=f"del_no_{slot_id}", help="Cancel",
+        if cc2.button("NO", key=f"del_no_{slot_id}", help="Cancel",
                       width="stretch"):
             st.session_state.pop(confirm_key, None)
             st.rerun()
     else:
-        if st.button("🗑️", key=f"del_ask_{slot_id}", help="Cancel slot",
+        if st.button("DEL", key=f"del_ask_{slot_id}", help="Cancel slot",
                      width="stretch"):
             st.session_state[confirm_key] = True
             st.rerun()
@@ -1973,32 +2046,32 @@ def _admin_slot_card(slot):
                    "".join(f"• {n}<br>" for n in names) + '</div>',
                    unsafe_allow_html=True)
     if slot["notes"]:
-        st.caption(f"📝 {slot['notes']}")
+        st.caption(f"{slot['notes']}")
 
     r1c1, r1c2 = st.columns(2)
     with r1c1:
-        with st.popover("✏️", help="Edit slot", width="stretch"):
+        with st.popover("EDIT", help="Edit slot", width="stretch"):
             _slot_edit_popover(slot)
     with r1c2:
         _slot_cancel_control(slot_id, int(slot["current_attendees_count"]))
 
     r2c1, r2c2 = st.columns(2)
     with r2c1:
-        with st.popover("➕", help="Add active client", width="stretch",
+        with st.popover("ADD", help="Add active client", width="stretch",
                         disabled=available <= 0):
             _slot_add_client_popover(slot)
     with r2c2:
-        with st.popover("💵", help="Add drop-in", width="stretch",
+        with st.popover("DROP-IN", help="Add drop-in", width="stretch",
                         disabled=available <= 0):
             _slot_add_dropin_popover(slot)
 
     if not bookings.empty:
-        with st.expander(f"👥 נרשמים ({len(bookings)})"):
+        with st.expander(f"נרשמים ({len(bookings)})"):
             _slot_roster_and_removal(bookings)
 
 
 def render_admin_schedule_view():
-    tab_add, tab_manage = st.tabs(["➕ Add Slot", "📋 Manage Slots"])
+    tab_add, tab_manage = st.tabs(["Add Slot", "Manage Slots"])
 
     with tab_add:
         with st.form("add_slot", clear_on_submit=True):
@@ -2017,7 +2090,7 @@ def render_admin_schedule_view():
             capacity = st.number_input("Max capacity", min_value=1, step=1,
                                        value=config.DEFAULT_SLOT_CAPACITY)
             notes = st.text_input("Notes (optional)")
-            submitted = st.form_submit_button("➕ Add Slot")
+            submitted = st.form_submit_button("Add Slot")
 
         if submitted:
             try:
@@ -2032,9 +2105,9 @@ def render_admin_schedule_view():
                 st.success(f"Slot added: {type_label} on {slot_date} "
                           f"{start_t.strftime('%H:%M')}–{end_t.strftime('%H:%M')}.")
             except logic.ValidationError as e:
-                st.error(f"⚠️ {e}")
+                st.error(str(e))
             except Exception as e:
-                st.error(f"❌ Could not add the slot: {e}")
+                st.error(f"Could not add the slot: {e}")
 
     with tab_manage:
         include_past = st.checkbox("Include past slots")
@@ -2042,7 +2115,7 @@ def render_admin_schedule_view():
         all_slots = cached_schedule_slots(_ver(), from_date, None)
 
         if all_slots.empty:
-            st.info("No schedule slots yet — add one in the ➕ Add Slot tab.")
+            st.info("No schedule slots yet — add one in the Add Slot tab.")
             return
 
         slot_dates = pd.to_datetime(all_slots["date"]).dt.date
@@ -2075,7 +2148,7 @@ def render_admin_schedule_view():
 def page_schedule():
     st.title("Schedule — מערכת שעות")
     public_view = st.toggle(
-        "👁️ Public Client View / תצוגת לקוח",
+        "Public Client View / תצוגת לקוח",
         help="Preview exactly what a client sees — a visual weekly "
              "timetable with WhatsApp/self-service booking.")
     if public_view:
@@ -2093,28 +2166,28 @@ def page_schedule():
 def page_settings():
     st.title("Settings — גיבוי והגדרות")
 
-    st.subheader("💾 Database backup")
+    st.subheader("Database backup")
     st.caption("A consistent snapshot of the entire database "
                "(taken via SQLite's online-backup API — safe to run anytime).")
     st.download_button(
-        "⬇️ Download database backup (gug_crm.db)",
+        "Download database backup (gug_crm.db)",
         data=logic.backup_db_bytes(),
         file_name=f"gug_crm_backup_{date.today().isoformat()}.db",
         mime="application/octet-stream",
     )
 
-    st.subheader("📊 Export to Excel")
+    st.subheader("Export to Excel")
     st.caption("All core tables — Clients, Packages, Sessions History, "
                "Finance, Open Debts — in one .xlsx workbook.")
     st.download_button(
-        "⬇️ Download Excel export (all tables)",
+        "Download Excel export (all tables)",
         data=logic.export_excel_bytes(),
         file_name=f"gug_export_{date.today().isoformat()}.xlsx",
         mime=("application/vnd.openxmlformats-officedocument"
               ".spreadsheetml.sheet"),
     )
 
-    st.subheader("ℹ️ Database info")
+    st.subheader("Database info")
     counts = logic.table_counts()
     c1, c2, c3, c4 = st.columns(4)
     c1.metric("Clients", counts["clients"])
@@ -2125,7 +2198,7 @@ def page_settings():
                "is as simple as replacing gug_crm.db with the backup file.")
 
     st.divider()
-    st.subheader("🗑️ Reset Database / איפוס נתונים")
+    st.subheader("Reset Database / איפוס נתונים")
     st.caption(
         "Permanently deletes every client, package, session and financial "
         "transaction, and resets ID counters back to 1. The schema, tables "
@@ -2133,7 +2206,7 @@ def page_settings():
         "for real data afterward. **This cannot be undone.** Download a "
         "backup above first if you might need this data again.")
 
-    with st.expander("⚠️ Open the danger zone"):
+    with st.expander("Open the danger zone"):
         reset_msg = st.session_state.pop("reset_db_msg", None)
         if reset_msg:
             st.success(reset_msg)
@@ -2161,21 +2234,21 @@ def page_settings():
             ready = (confirmed and
                     typed.strip() == logic.RESET_CONFIRMATION_PHRASE)
 
-            if st.button("🗑️ Reset Database", type="primary",
+            if st.button("Reset Database", type="primary",
                         disabled=not ready):
                 try:
                     deleted = logic.reset_database(typed)
                     bump_data()
                     st.session_state["reset_db_msg"] = (
-                        f"✅ Database reset complete — "
+                        f"Database reset complete — "
                         f"{sum(deleted.values())} record(s) deleted across "
                         f"{len(deleted)} tables. IDs restart at 1 — ready "
                         "for real data.")
                     st.rerun()
                 except logic.ValidationError as e:
-                    st.error(f"⚠️ {e}")
+                    st.error(str(e))
                 except Exception as e:
-                    st.error(f"❌ Could not reset the database: {e}")
+                    st.error(f"Could not reset the database: {e}")
 
 
 # ---------------------------------------------------------------------------
@@ -2200,11 +2273,11 @@ try:
     if st.session_state["is_admin"]:
         PAGES[page]()
     else:
-        st.title("💪 GUG CRM")
+        st.title("GUG CRM")
         render_public_schedule_view()
 except logic.ValidationError as e:
-    st.error(f"⚠️ {e}")
+    st.error(str(e))
 except Exception as e:  # pragma: no cover — last-resort boundary
-    st.error("❌ Something went wrong on this page — your data is safe. "
+    st.error("Something went wrong on this page — your data is safe. "
              "Details below; try again or switch pages.")
     st.exception(e)
