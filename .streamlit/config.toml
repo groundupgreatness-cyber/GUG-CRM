@@ -10,3 +10,12 @@ backgroundColor = "#0D0E12"
 secondaryBackgroundColor = "#1A1D24"
 textColor = "#FFFFFF"
 font = "sans serif"
+
+# Auto-rerun the app whenever a .py source file is saved, instead of
+# requiring a manual "Rerun" click in the browser. Does NOT watch
+# gug_crm.db — Streamlit's file watcher only tracks source files. Database
+# changes are already handled separately: every cached read in app.py is
+# keyed on the DB file's mtime (see app._ver()), so they're picked up
+# correctly on the next rerun regardless of what triggers that rerun.
+[server]
+runOnSave = true
