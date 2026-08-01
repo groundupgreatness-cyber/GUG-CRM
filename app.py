@@ -337,6 +337,11 @@ def inject_custom_css():
             margin-bottom: 6px;
             unicode-bidi: plaintext;
         }}
+        /* A slot the identified client is already registered for. */
+        .gug-slot-block-registered {{
+            border-color: {COLOR_GOOD};
+            background: rgba(34, 197, 94, 0.08);
+        }}
         .gug-slot-time {{ font-size: 12.5px; font-weight: 700; color: {COLOR_TEXT_PRIMARY}; }}
         .gug-slot-type {{
             font-size: 11.5px; font-weight: 700; margin-top: 1px;
@@ -1762,21 +1767,26 @@ def _slot_seats_badge(available: int) -> str:
            f'נותרו {available} מקומות</span>')
 
 
-def _slot_card_html(row) -> str:
+def _slot_card_html(row, registered: bool = False) -> str:
     """Shared slot-block markup for both the public and admin weekly grids
     — color-coded by session type (SESSION_TYPE_COLORS, the same palette
-    already used by the charts/calendar) for quick visual scanning."""
+    already used by the charts/calendar) for quick visual scanning.
+    `registered` highlights a slot the identified client is already booked
+    into (public view only — admin call sites never pass it)."""
     type_label = config.SESSION_TYPES.get(row["session_type"],
                                           row["session_type"] or "—")
     coach_label = config.TRAINERS.get(row["coach_name"], row["coach_name"])
     color = SESSION_TYPE_COLORS.get(row["session_type"], "#898781")
     available = int(row["available_seats"])
+    css_class = "gug-slot-block gug-slot-block-registered" if registered else "gug-slot-block"
+    badge = ('<span class="gug-schedule-seats" style="background:rgba(34,197,94,.18);'
+            'color:#22C55E;">רשומ/ה</span>' if registered else _slot_seats_badge(available))
     return (
-        f'<div class="gug-slot-block" style="border-inline-start-color:{color};">'
+        f'<div class="{css_class}" style="border-inline-start-color:{color};">'
         f'<div class="gug-slot-time">{row["start_time"]}–{row["end_time"]}</div>'
         f'<div class="gug-slot-type" style="color:{color};">{type_label}</div>'
         f'<div class="gug-slot-coach">{coach_label}</div>'
-        f'{_slot_seats_badge(available)}'
+        f'{badge}'
         f'</div>'
     )
 
@@ -1823,15 +1833,39 @@ def render_public_schedule_view():
         key="public_phone_lookup", placeholder="050-1234567")
 
     lookup = None
-    has_balance = False
+    can_book = False
     if phone_entry.strip():
         lookup = logic.find_client_by_phone(phone_entry)
-        has_balance = bool(lookup and lookup["remaining_sessions"] > 0)
-        if lookup and has_balance:
-            st.success(
-                f"שלום {lookup['name']}! נותרו לך "
-                f"**{lookup['remaining_sessions']}** אימונים בכרטיסייה — "
-                "בחרו אימון בלוח למטה והירשמו ישירות.")
+        can_book = bool(lookup and lookup["can_book"])
+        if lookup and can_book:
+            if lookup["package_kind"] == "pack":
+                st.success(
+                    f"שלום {lookup['name']}! נותרו לך "
+                    f"**{lookup['remaining_sessions']}** אימונים בכרטיסייה — "
+                    "בחרו אימון בלוח למטה והירשמו ישירות.")
+            else:
+                st.success(
+                    f"שלום {lookup['name']}! המנוי שלך פעיל — "
+                    "בחרו אימון בלוח למטה והירשמו ישירות.")
+
+            pack_value = (str(lookup["remaining_sessions"])
+                         if lookup["package_kind"] == "pack" else "פעיל")
+            pack_sub = ("אימונים בכרטיסייה" if lookup["package_kind"] == "pack"
+                       else "מנוי חודשי")
+            status_label = (config.PAYMENT_STATUSES.get(lookup["payment_status"])
+                           if lookup["payment_status"] else "—")
+            status_accent = ("good" if lookup["payment_status"] == "Paid"
+                            else "warning" if lookup["payment_status"] == "Partial"
+                            else "critical" if lookup["payment_status"] == "Pending"
+                            else "blue")
+            kpi_row([
+                {"label": "כרטיסייה / מנוי", "value": pack_value,
+                 "sub": pack_sub, "accent": "good"},
+                {"label": "סטטוס תשלום", "value": status_label or "—",
+                 "accent": status_accent},
+                {"label": "אימונים קרובים שנרשמת אליהם",
+                 "value": str(lookup["upcoming_count"]), "accent": "blue"},
+            ])
         else:
             hello = f"היי {lookup['name']}, " if lookup else ""
             st.info(
@@ -1872,14 +1906,31 @@ def render_public_schedule_view():
                 for _, row in day_slots.iterrows():
                     slot_id = int(row["id"])
                     available = int(row["available_seats"])
-                    st.markdown(_slot_card_html(row), unsafe_allow_html=True)
+                    is_registered = bool(
+                        lookup and slot_id in lookup["upcoming_booking_slot_ids"])
+                    st.markdown(_slot_card_html(row, registered=is_registered),
+                               unsafe_allow_html=True)
+
+                    if is_registered:
+                        booking_id = logic.find_client_booking_id(
+                            slot_id, lookup["client_id"])
+                        if booking_id and st.button(
+                                "ביטול הרשמה", key=f"cancel_{slot_id}",
+                                width="stretch"):
+                            try:
+                                logic.remove_slot_booking(booking_id)
+                                bump_data()
+                                st.success("ההרשמה בוטלה.")
+                                st.rerun()
+                            except logic.ValidationError as e:
+                                st.error(str(e))
+                        continue
+
                     if available <= 0:
                         continue
-                    if lookup and has_balance:
-                        if logic.is_client_booked_in_slot(slot_id, lookup["client_id"]):
-                            st.caption("נרשמת")
-                        elif st.button("אני רוצה להירשם", key=f"selfbook_{slot_id}",
-                                      width="stretch"):
+                    if lookup and can_book:
+                        if st.button("אני רוצה להירשם", key=f"selfbook_{slot_id}",
+                                     width="stretch"):
                             try:
                                 result = logic.book_client_to_slot(
                                     slot_id, lookup["client_id"])

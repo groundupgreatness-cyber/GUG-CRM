@@ -676,26 +676,48 @@ def slots_by_date(slots: pd.DataFrame, days: list[date]) -> dict[str, pd.DataFra
 
 
 def find_client_by_phone(phone: str) -> dict | None:
-    """Public self-identification lookup for the schedule view (Step 1):
-    matches an entered phone number against ACTIVE clients only, comparing
-    normalized international digits via format_phone_intl() so any common
-    local format the visitor types in matches however the number was
-    originally entered by the admin.
+    """Public self-identification lookup for the schedule view: matches an
+    entered phone number against ACTIVE clients only, comparing normalized
+    international digits via format_phone_intl() so any common local format
+    the visitor types in matches however the number was originally entered
+    by the admin.
 
-    Returns ONLY that one client's own id/name/remaining-session count —
-    never anything about any other client — or None on no match, so the
-    public view can never leak the client list."""
+    Recognizes BOTH session packs (כרטיסיה, counted) and monthly
+    subscriptions (מנוי/ליווי, uncounted) as a bookable "active package" —
+    a subscription client has remaining_sessions=0 but is still eligible to
+    self-book (can_book=True), since subscriptions aren't decremented per
+    visit in this schema. Also returns the client's own upcoming bookings,
+    for the personal status dashboard and the "you're registered for this
+    one" grid highlight.
+
+    Returns ONLY that one client's own data — never anything about any
+    other client — or None on no match, so the public view can never leak
+    the client list."""
     intl = format_phone_intl(phone)
     if not intl:
         return None
     clients = db.get_clients(status="Active")
     for _, c in clients.iterrows():
         if format_phone_intl(c["phone"]) == intl:
-            pack = db.get_active_session_package(int(c["id"]))
+            client_id = int(c["id"])
+            stats = db.get_client_stats(client_id)
+            pack, sub = stats["active_pack"], stats["subscription"]
+            if pack:
+                kind, payment_status = "pack", pack["payment_status"]
+            elif sub:
+                kind, payment_status = "subscription", sub["payment_status"]
+            else:
+                kind, payment_status = "none", None
+            upcoming = db.get_client_upcoming_bookings(client_id)
             return {
-                "client_id": int(c["id"]),
+                "client_id": client_id,
                 "name": c["name"],
                 "remaining_sessions": pack["remaining_sessions"] if pack else 0,
+                "package_kind": kind,
+                "payment_status": payment_status,
+                "can_book": bool(pack) or bool(sub),
+                "upcoming_booking_slot_ids": set(upcoming["slot_id"].tolist()),
+                "upcoming_count": len(upcoming),
             }
     return None
 
@@ -708,6 +730,19 @@ def is_client_booked_in_slot(slot_id: int, client_id: int) -> bool:
         return False
     client_bookings = bookings[bookings["booking_type"] == "client"]
     return client_id in client_bookings["client_id"].values
+
+
+def find_client_booking_id(slot_id: int, client_id: int) -> int | None:
+    """The booking row id for this client in this slot, if any — lets the
+    public view offer a self-service Cancel action that reuses the same
+    remove_slot_booking() the admin roster already uses (correctly restores
+    a pack deduction), without exposing anyone else's booking id."""
+    bookings = db.get_slot_bookings(slot_id)
+    if bookings.empty:
+        return None
+    match = bookings[(bookings["booking_type"] == "client") &
+                     (bookings["client_id"] == client_id)]
+    return int(match.iloc[0]["id"]) if not match.empty else None
 
 
 def book_client_to_slot(slot_id: int, client_id: int,

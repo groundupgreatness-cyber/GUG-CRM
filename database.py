@@ -993,6 +993,24 @@ def get_slot_bookings(slot_id: int) -> pd.DataFrame:
         return pd.read_sql_query(query, conn, params=(slot_id,))
 
 
+def get_client_upcoming_bookings(client_id: int) -> pd.DataFrame:
+    """A client's own upcoming (today-forward) slot bookings — feeds the
+    public schedule's personal status dashboard and the "you're registered
+    for this one" highlight, in a single query rather than checking each
+    rendered slot individually."""
+    query = """
+        SELECT b.id AS booking_id, b.slot_id, w.date, w.start_time,
+               w.end_time, w.session_type, w.coach_name
+        FROM schedule_bookings b
+        JOIN weekly_schedule w ON w.id = b.slot_id
+        WHERE b.client_id = ? AND b.booking_type = 'client' AND w.date >= ?
+        ORDER BY w.date, w.start_time
+    """
+    with get_connection() as conn:
+        return pd.read_sql_query(query, conn,
+                                 params=(client_id, date.today().isoformat()))
+
+
 def fetch_schedule_booking(booking_id: int) -> sqlite3.Row | None:
     with get_connection() as conn:
         return conn.execute("SELECT * FROM schedule_bookings WHERE id = ?",
