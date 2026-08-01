@@ -5,7 +5,7 @@
 # light mode based on a visitor's OS setting.
 [theme]
 base = "dark"
-primaryColor = "#0066FF"
+primaryColor = "#E0610E"
 backgroundColor = "#0D0E12"
 secondaryBackgroundColor = "#1A1D24"
 textColor = "#FFFFFF"

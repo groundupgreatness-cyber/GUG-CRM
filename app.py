@@ -76,12 +76,16 @@ COLOR_CARD_BG = "#1A1D24"
 COLOR_CARD_BORDER = "#2A2E39"
 COLOR_TEXT_PRIMARY = "#FFFFFF"
 COLOR_TEXT_MUTED = "#9A9FAE"
-COLOR_ACCENT = "#0066FF"
-COLOR_ACCENT_HOVER = "#0052CC"
+COLOR_ACCENT = "#E0610E"
+COLOR_ACCENT_HOVER = "#B34E0B"
 
 # One consistent 3-color language reused by the calendar, the session-types
 # donut, and (separately) the payout donut — never mixed on the same chart.
-COLOR_BLUE = COLOR_ACCENT
+# Deliberately independent from COLOR_ACCENT (brand/UI-chrome color): these
+# encode data categories, not brand identity, and COLOR_ORANGE already
+# occupies this exact palette slot, so aliasing it to the (now orange)
+# accent would collide the two categories into one indistinguishable hue.
+COLOR_BLUE = "#0066FF"
 COLOR_ORANGE = "#FF8A00"
 COLOR_AQUA = "#14D8C4"
 
@@ -216,7 +220,7 @@ def inject_custom_css():
             background: {COLOR_CARD_BG};
         }}
         [data-testid="stSidebar"] [data-testid="stRadio"] label[data-checked="true"] {{
-            background: rgba(0, 102, 255, 0.14);
+            background: rgba(224, 97, 14, 0.14);
             border-inline-start: 3px solid {COLOR_ACCENT};
         }}
 
