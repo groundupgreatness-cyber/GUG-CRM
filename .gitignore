@@ -21,3 +21,11 @@ __pycache__/
 # even a private repo. import_gug_data.py is a one-time local script; run
 # it from a local copy of this file if you ever need to re-import.
 *.csv
+
+# Local env files (API keys, etc.) — none in use yet, but never commit one
+.env
+.env.*
+
+# Editor/IDE folders
+.vscode/
+.idea/
